@@ -1,0 +1,6 @@
+[
+{
+  "directory": "/home/jason/github/c_stuff/rlib_projects/ball_room",
+  "arguments": ["/usr/bin/gcc", "-c", "-m64", "-fvisibility=hidden", "-Wall", "-Werror", "-O3", "-D_DEFAULT_SOURCE", "-D_BSD_SOURCE", "-DHAS_FCHOWN", "-DHAS_STICKY_DIR_BIT", "-isystem", "/home/jason/.xmake/packages/r/raygui/4.0/9d606ceee8cb49559023212a8fb08d54/include", "-isystem", "/home/jason/.xmake/packages/r/raylib/5.0/aeed26e13a7a466f9d7c7ad6dd3b75c2/include", "-DNDEBUG", "-o", "build/.objs/ball_room/linux/x86_64/release/src/main.c.o", "src/main.c"],
+  "file": "src/main.c"
+}]
