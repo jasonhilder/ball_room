@@ -4,13 +4,9 @@
 #define STB_DS_IMPLEMENTATION
 #include "libs/stb_ds.h"
 
-#define WIN_WIDTH 1000.0
-#define WIN_HEIGHT 800.0
+#define WIN_WIDTH 800.0
+#define WIN_HEIGHT 450.0
 #define BG CLITERAL(Color){0x18, 0x18, 0x18, 0xFF}
-
-// Adjust gravity value for smoother fall
-#define GRAVITY 1000.0f 
-#define MAX_SPEED 16.0f
 
 typedef enum  
 {
@@ -19,6 +15,7 @@ typedef enum
 
 typedef struct {
     Vector2 position;
+    Vector2 velocity;
     Color color;
     int size;
     entity_type type;
@@ -27,6 +24,7 @@ typedef struct {
 typedef struct {
     bool is_running;
     Entity* entities;
+    int entity_count;
 } App;
 
 void render_entities(Entity* entities, int count)
@@ -45,19 +43,68 @@ void update_entities(Entity* entities, int count, float deltaTime)
 {
     for (int i = 0; i < count; i++)
     {
-        // Calculate new position based on gravity and deltaTime
-        float fallSpeed = GRAVITY * deltaTime;
-        // Clamp the fall speed to prevent choppiness
-        if (fallSpeed > MAX_SPEED) fallSpeed = MAX_SPEED;
+        Entity* ball = &entities[i];
 
-        // Update the position of each entity
-        if(!(entities[i].position.y >= WIN_HEIGHT - entities[i].size))
-        {
-            entities[i].position.y += fallSpeed;
+        // Update position based on velocity
+        ball->position.y += ball->velocity.y;
+        ball->position.x += ball->velocity.x;
+
+        // Check Y boundaries (top and bottom)
+        if (ball->position.y >= (GetScreenHeight() - ball->size)) {
+            if (ball->velocity.y > 0) {
+                int randVelocity = GetRandomValue(-15, -5); 
+                ball->velocity.y = (float)randVelocity;
+            }
+        }
+        else if (ball->position.y <= ball->size) {
+            if (ball->velocity.y < 0) {
+                int randVelocity = GetRandomValue(5, 15);
+                ball->velocity.y = (float)randVelocity;
+            }
+        }
+
+        if (ball->position.x >= (GetScreenWidth() - ball->size)) {
+            if (ball->velocity.x > 0) {
+                int randVelocity = GetRandomValue(-15, -5);
+                ball->velocity.x = (float)randVelocity;
+            }
+        }
+        else if (ball->position.x <= ball->size) {
+            if (ball->velocity.x < 0) {
+                int randVelocity = GetRandomValue(5, 15);
+                ball->velocity.x = (float)randVelocity;
+            }
         }
     }
 }
 
+void generate_entities(App* app, int count)
+{
+    while(app->entity_count < count) {
+        int rand_grav_x = GetRandomValue(-10, 10);
+        int rand_grav_y = GetRandomValue(5, 15);
+        int rand_size = GetRandomValue(15, 30);
+
+        Entity c = {
+            .position = { WIN_WIDTH / 2, WIN_HEIGHT / 2 },
+            .velocity = {(float)rand_grav_x, (float)rand_grav_y},
+            .color = (Color){
+                GetRandomValue(0, 255),
+                GetRandomValue(0, 255),
+                GetRandomValue(0, 255),
+                255
+            },
+            .size = rand_size,
+            .type = Circle
+        };
+
+        arrput(app->entities, c);
+
+        app->entity_count++;
+    }
+
+    return;
+}
 
 int main(void) {
 
@@ -65,17 +112,10 @@ int main(void) {
 
     Entity* entity_array = NULL;
 
-    Entity c = {
-        { WIN_WIDTH / 2, 0 },
-        RED,
-        20,
-        Circle
-    };
-    arrput(entity_array,c);
-
     App my_app = {
-        true,
-        entity_array
+        .is_running = true,
+        .entities = entity_array,
+        .entity_count = 0
     };
 
     // raylib begin
@@ -88,6 +128,8 @@ int main(void) {
     while(!WindowShouldClose())
     {
         float dt = GetFrameTime();
+
+        generate_entities(&my_app, 333);
 
         BeginDrawing();
 
