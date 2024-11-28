@@ -9,7 +9,7 @@
 #define WIN_HEIGHT 450.0f
 #define BG CLITERAL(Color){0x18, 0x18, 0x18, 0xFF}
 #define GRAVITY 10.0f
-#define DRAG 0.95f
+#define DRAG 0.80f
 
 typedef enum  
 {
@@ -52,34 +52,51 @@ void update_entities(Entity* entities, int count, float dt)
         // Apply gravity to the ball's velocity 
         ball->velocity.y += GRAVITY;
 
-        // Update position based on velocity
         ball->position.y += ball->velocity.y * dt;
         ball->position.x += ball->velocity.x * dt;
 
-        if (ball->position.y >= (GetScreenHeight() - ball->size)) {
+        // check collison
+
+
+        if (ball->position.y >= (GetScreenHeight() - ball->size)) 
+        {
             ball->position.y = GetScreenHeight() - ball->size;
+            // Reverse and dampen the velocity (bounce)
             ball->velocity.y = -DRAG * ball->velocity.y; 
         }
 
-        if (ball->position.y < ball->size) {
-            ball->position.y = ball->size;
+        if (ball->position.y < ball->size) 
+        {
             ball->velocity.y = -DRAG * ball->velocity.y;  
-
-            if(fabsf(ball->velocity.y) <= 0.1)
-            {
-                ball->velocity.y = 0;
-            }
         }
 
+        if(ball->position.x >= (GetScreenWidth() - ball->size) || ball->position.x <= 0 + ball->size) 
+        {
+            ball->velocity.x = -DRAG * ball->velocity.x;  
+        }
+
+        // Check if the ball has come to rest on the ground
+        if (ball->position.y >= (float)(WIN_HEIGHT - ball->size) && fabsf(ball->velocity.y) < 4.50f)
+        {
+            ball->velocity.x = DRAG * ball->velocity.x; 
+
+            // If the ball is not moving horizontally, stop it
+            if (fabsf(ball->velocity.x) <= 0.01f)
+            {
+                ball->velocity.x = 0;
+            }
+        }
     }
 }
 
 void generate_entities(App* app, int count)
 {
     while(app->entity_count < count) {
+        int rand_dir = GetRandomValue((-WIN_WIDTH / 2), WIN_WIDTH / 2);
         Entity c = {
+            //.position = { WIN_WIDTH / 2, 20 },
             .position = { WIN_WIDTH / 2, 20 },
-            .velocity = {0, 0},
+            .velocity = {rand_dir, 0},
             .color = (Color){
                 GetRandomValue(0, 255),
                 GetRandomValue(0, 255),
@@ -120,7 +137,7 @@ int main(void) {
     {
         float dt = GetFrameTime();
 
-        generate_entities(&my_app, 1);
+        generate_entities(&my_app, 8);
 
         BeginDrawing();
 
