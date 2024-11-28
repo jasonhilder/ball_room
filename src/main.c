@@ -78,9 +78,9 @@ void update_entities(Entity* entities, int count, float dt)
         // Check if the ball has come to rest on the ground
         if (ball->position.y >= (float)(WIN_HEIGHT - ball->size) && fabsf(ball->velocity.y) < 4.50f)
         {
-            ball->velocity.x = DRAG * ball->velocity.x; 
+            ball->velocity.x = 0.99 * ball->velocity.x; 
 
-            // If the ball is not moving horizontally, stop it
+            // If the ball velocity is really slow, stop it
             if (fabsf(ball->velocity.x) <= 0.01f)
             {
                 ball->velocity.x = 0;
