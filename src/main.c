@@ -10,6 +10,7 @@
 #define BG CLITERAL(Color){0x18, 0x18, 0x18, 0xFF}
 #define GRAVITY 10.0f
 #define DRAG 0.80f
+#define SPAWN_DELAY 0.2f
 
 typedef enum  
 {
@@ -28,6 +29,7 @@ typedef struct {
     bool is_running;
     Entity* entities;
     int entity_count;
+    float spawn_timer;
 } App;
 
 void render_entities(Entity* entities, int count)
@@ -56,22 +58,64 @@ void update_entities(Entity* entities, int count, float dt)
         ball->position.x += ball->velocity.x * dt;
 
         // check collison
+        for (int j = 0; j < count; j++)
+        {
+            if(j != i) 
+            {
+                Entity* other_ball = &entities[j];
 
+                float distx = ball->position.x - other_ball->position.x;
+                float disty = ball->position.y - other_ball->position.y;
 
+                float distance = sqrtf((distx * distx) + (disty * disty));
+
+                if(distance <= (ball->size + other_ball->size))
+                {
+                    // Separate the balls to prevent overlap
+                    float overlap = (ball->size + other_ball->size) - distance;
+                    float normalization_factor = overlap / distance;
+
+                    // Move the balls apart based on the overlap amount
+                    // Move ball 1
+                    ball->position.x += distx * normalization_factor * 0.5f; 
+                    ball->position.y += disty * normalization_factor * 0.5f;
+
+                    // Move ball 2
+                    other_ball->position.x -= distx * normalization_factor * 0.5f; 
+                    other_ball->position.y -= disty * normalization_factor * 0.5f;
+
+                    // Swap velocities
+                    Vector2 tmp = ball->velocity;
+                    ball->velocity = other_ball->velocity;
+                    other_ball->velocity = tmp;
+                }
+            }
+        }
+
+        // check y bounds
         if (ball->position.y >= (GetScreenHeight() - ball->size)) 
         {
             ball->position.y = GetScreenHeight() - ball->size;
             // Reverse and dampen the velocity (bounce)
             ball->velocity.y = -DRAG * ball->velocity.y; 
         }
-
+        // check y bounds
         if (ball->position.y < ball->size) 
         {
+            ball->position.y = ball->size;
             ball->velocity.y = -DRAG * ball->velocity.y;  
         }
 
-        if(ball->position.x >= (GetScreenWidth() - ball->size) || ball->position.x <= 0 + ball->size) 
+        // check x bounds
+        if(ball->position.x >= (GetScreenWidth() - ball->size)) 
         {
+            ball->position.x = GetScreenWidth() - ball->size;
+            ball->velocity.x = -DRAG * ball->velocity.x;  
+        }
+
+        // check x bounds
+        if(ball->position.x <= 0 + ball->size) {
+            ball->position.x = ball->size;
             ball->velocity.x = -DRAG * ball->velocity.x;  
         }
 
@@ -89,12 +133,13 @@ void update_entities(Entity* entities, int count, float dt)
     }
 }
 
-void generate_entities(App* app, int count)
+void generate_entities(App* app, int count, float dt)
 {
-    while(app->entity_count < count) {
+    app->spawn_timer += dt;
+
+    while(app->entity_count < count && app->spawn_timer >= SPAWN_DELAY) {
         int rand_dir = GetRandomValue((-WIN_WIDTH / 2), WIN_WIDTH / 2);
         Entity c = {
-            //.position = { WIN_WIDTH / 2, 20 },
             .position = { WIN_WIDTH / 2, 20 },
             .velocity = {rand_dir, 0},
             .color = (Color){
@@ -109,6 +154,8 @@ void generate_entities(App* app, int count)
 
         arrput(app->entities, c);
         app->entity_count++;
+
+        app->spawn_timer = 0.0f;
     }
 
     return;
@@ -123,7 +170,8 @@ int main(void) {
     App my_app = {
         .is_running = true,
         .entities = entity_array,
-        .entity_count = 0
+        .entity_count = 0,
+        .spawn_timer = 0
     };
 
     // raylib begin
@@ -137,7 +185,7 @@ int main(void) {
     {
         float dt = GetFrameTime();
 
-        generate_entities(&my_app, 8);
+        generate_entities(&my_app, 5, dt);
 
         BeginDrawing();
 
